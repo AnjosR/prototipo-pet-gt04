@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth, roleLabel } from "@/lib/auth";
 import { store, useGestante } from "@/lib/store";
-import { INDICATORS, canEditIndicator, indicatorStatus, statusColor, type IndicatorDef } from "@/lib/indicators";
+import { INDICATORS, visibleIndicatorsFor, canEditIndicator, indicatorStatus, statusColor, type IndicatorDef } from "@/lib/indicators";
 import { calcDPP, formatDate, formatIG } from "@/lib/gestacao";
 import type { Gestante, IndicatorKey, Indicators } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,11 +44,9 @@ function GestanteDetail() {
 
   const canEditPatient = user.role === "medico";
 
-  // Filtragem por perfil:
-  // - médico: vê todos
-  // - ACS: vê todos em leitura, edita E e J
-  // - dentista: vê todos em leitura, edita K
-  const visibleIndicators = INDICATORS;
+  // Cada perfil enxerga apenas os indicadores que remetem ao seu contexto:
+  // médico vê todos; ACS vê E e J; dentista vê K.
+  const visibleIndicators = visibleIndicatorsFor(user.role);
 
   return (
     <div className="space-y-5">
@@ -56,9 +54,6 @@ function GestanteDetail() {
         <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
           <ArrowLeft className="h-4 w-4 mr-1" />Voltar
         </Button>
-        <div className="ml-auto text-xs text-muted-foreground">
-          Logado como <strong>{user.displayName}</strong> · {roleLabel[user.role]}
-        </div>
       </div>
 
       <Card>
@@ -82,7 +77,7 @@ function GestanteDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Indicadores de acompanhamento (A–K)</CardTitle>
+          <CardTitle>Indicadores de acompanhamento</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {visibleIndicators.map((def) => (
@@ -95,18 +90,23 @@ function GestanteDetail() {
         <Card>
           <CardHeader><CardTitle className="text-base">Histórico de alterações</CardTitle></CardHeader>
           <CardContent>
-            <div className="text-xs space-y-1.5 max-h-64 overflow-auto">
+            <ul className="space-y-3 max-h-72 overflow-auto pr-1">
               {[...g.audit].reverse().map((a, i) => (
-                <div key={i} className="flex flex-wrap gap-x-2 border-b py-1.5 last:border-0">
-                  <span className="text-muted-foreground">{new Date(a.at).toLocaleString("pt-BR")}</span>
-                  <span><strong>{a.user}</strong> ({roleLabel[a.role]})</span>
-                  <span>alterou <code className="bg-muted px-1 rounded">{a.field}</code></span>
-                  <span className="text-muted-foreground">
-                    de <code>{JSON.stringify(a.oldValue)}</code> → <code>{JSON.stringify(a.newValue)}</code>
-                  </span>
-                </div>
+                <li key={i} className="flex gap-3 text-sm">
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary/60" />
+                  <div className="min-w-0">
+                    <p className="leading-snug">
+                      <span className="font-medium">{auditFieldLabel(a.field)}</span>
+                      {" → "}
+                      <span className="font-medium">{auditValueLabel(a.newValue)}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {a.user} · {new Date(a.at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                    </p>
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </CardContent>
         </Card>
       )}
@@ -266,4 +266,26 @@ function CountControl({ value, max, editable, onChange }: { value: number; max: 
 
 function statusLabel(s: string) {
   return s === "ok" ? "Em dia" : s === "warn" ? "Próximo do vencimento" : s === "late" ? "Vencido" : "Não aplicável";
+}
+
+const PATIENT_FIELD_LABELS: Record<string, string> = {
+  nome: "Nome", cpf: "CPF", dataNascimento: "Data de nascimento", endereco: "Endereço",
+  telefone: "Telefone", cartaoSus: "Cartão SUS", dum: "DUM", microarea: "Microárea / ACS",
+  primeiraConsulta: "1ª consulta", dataParto: "Data do parto",
+};
+
+function auditFieldLabel(field: string): string {
+  if (field.startsWith("indicador.")) {
+    const key = field.split(".")[1] as IndicatorKey;
+    const def = INDICATORS.find((i) => i.key === key);
+    return def ? `${key} · ${def.short}` : `Indicador ${key}`;
+  }
+  return PATIENT_FIELD_LABELS[field] ?? field;
+}
+
+function auditValueLabel(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "boolean") return value ? "Sim" : "Não";
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return formatDate(value);
+  return String(value);
 }

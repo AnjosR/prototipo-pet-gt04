@@ -111,3 +111,12 @@ export function canEditIndicator(role: Role, key: IndicatorKey): boolean {
   if (role === "acs") return key === "E" || key === "J";
   return false;
 }
+
+/**
+ * Indicadores visíveis para o perfil: cada usuário enxerga apenas o que
+ * remete ao seu contexto. Médico/Enfermeiro vê todos; ACS vê E e J;
+ * Dentista vê apenas K.
+ */
+export function visibleIndicatorsFor(role: Role): IndicatorDef[] {
+  return INDICATORS.filter((i) => role === "medico" || i.owner === role);
+}
