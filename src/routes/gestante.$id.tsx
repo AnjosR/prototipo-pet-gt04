@@ -3,7 +3,14 @@ import { AppShell } from "@/components/AppShell";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth, roleLabel } from "@/lib/auth";
 import { store, useGestante } from "@/lib/store";
-import { INDICATORS, visibleIndicatorsFor, canEditIndicator, indicatorStatus, statusColor, type IndicatorDef } from "@/lib/indicators";
+import {
+  INDICATORS,
+  visibleIndicatorsFor,
+  canEditIndicator,
+  indicatorStatus,
+  statusColor,
+  type IndicatorDef,
+} from "@/lib/indicators";
 import { calcDPP, formatDate, formatIG } from "@/lib/gestacao";
 import type { Gestante, IndicatorKey, Indicators } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +43,9 @@ function GestanteDetail() {
     return (
       <div className="text-center py-20">
         <p className="text-muted-foreground">Gestante não encontrada.</p>
-        <Button variant="outline" className="mt-4" onClick={() => navigate({ to: "/dashboard" })}>Voltar</Button>
+        <Button variant="outline" className="mt-4" onClick={() => navigate({ to: "/dashboard" })}>
+          Voltar
+        </Button>
       </div>
     );
   }
@@ -52,7 +61,8 @@ function GestanteDetail() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
-          <ArrowLeft className="h-4 w-4 mr-1" />Voltar
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Voltar
         </Button>
       </div>
 
@@ -60,10 +70,15 @@ function GestanteDetail() {
         <CardHeader className="flex flex-row items-start justify-between pb-3">
           <div>
             <CardTitle className="text-xl">{g.nome}</CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">Cadastrada em {formatDate(g.createdAt.slice(0, 10))}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Cadastrada em {formatDate(g.createdAt.slice(0, 10))}
+            </p>
           </div>
           {canEditPatient && !editingPatient && (
-            <Button variant="outline" size="sm" onClick={() => setEditingPatient(true)}><Pencil className="h-4 w-4 mr-1" />Editar dados</Button>
+            <Button variant="outline" size="sm" onClick={() => setEditingPatient(true)}>
+              <Pencil className="h-4 w-4 mr-1" />
+              Editar dados
+            </Button>
           )}
         </CardHeader>
         <CardContent>
@@ -88,7 +103,9 @@ function GestanteDetail() {
 
       {g.audit.length > 0 && (
         <Card>
-          <CardHeader><CardTitle className="text-base">Histórico de alterações</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Histórico de alterações</CardTitle>
+          </CardHeader>
           <CardContent>
             <ul className="space-y-3 max-h-72 overflow-auto pr-1">
               {[...g.audit].reverse().map((a, i) => (
@@ -101,7 +118,11 @@ function GestanteDetail() {
                       <span className="font-medium">{auditValueLabel(a.newValue)}</span>
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {a.user} · {new Date(a.at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                      {a.user} ·{" "}
+                      {new Date(a.at).toLocaleString("pt-BR", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
                     </p>
                   </div>
                 </li>
@@ -143,11 +164,19 @@ function PatientView({ g }: { g: Gestante }) {
 function PatientEditForm({ g, onDone }: { g: Gestante; onDone: () => void }) {
   const { user } = useAuth();
   const [f, setF] = useState({
-    nome: g.nome, cpf: g.cpf, dataNascimento: g.dataNascimento, endereco: g.endereco,
-    telefone: g.telefone, cartaoSus: g.cartaoSus, dum: g.dum, microarea: g.microarea,
-    primeiraConsulta: g.primeiraConsulta, dataParto: g.dataParto,
+    nome: g.nome,
+    cpf: g.cpf,
+    dataNascimento: g.dataNascimento,
+    endereco: g.endereco,
+    telefone: g.telefone,
+    cartaoSus: g.cartaoSus,
+    dum: g.dum,
+    microarea: g.microarea,
+    primeiraConsulta: g.primeiraConsulta,
+    dataParto: g.dataParto,
   });
-  const upd = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
+  const upd = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setF((x) => ({ ...x, [k]: e.target.value }));
   const save = () => {
     if (!user) return;
     store.updatePatient(g.id, f, { user: user.username, role: user.role });
@@ -156,25 +185,59 @@ function PatientEditForm({ g, onDone }: { g: Gestante; onDone: () => void }) {
   };
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Mini label="Nome" className="md:col-span-3"><Input value={f.nome} onChange={upd("nome")} /></Mini>
-      <Mini label="CPF"><Input value={f.cpf} onChange={upd("cpf")} /></Mini>
-      <Mini label="Data nascimento"><Input type="date" value={f.dataNascimento} onChange={upd("dataNascimento")} /></Mini>
-      <Mini label="Telefone"><Input value={f.telefone} onChange={upd("telefone")} /></Mini>
-      <Mini label="Endereço" className="md:col-span-2"><Input value={f.endereco} onChange={upd("endereco")} /></Mini>
-      <Mini label="Cartão SUS"><Input value={f.cartaoSus} onChange={upd("cartaoSus")} /></Mini>
-      <Mini label="DUM"><Input type="date" value={f.dum} onChange={upd("dum")} /></Mini>
-      <Mini label="Microárea / ACS"><Input value={f.microarea} onChange={upd("microarea")} /></Mini>
-      <Mini label="1ª consulta"><Input type="date" value={f.primeiraConsulta} onChange={upd("primeiraConsulta")} /></Mini>
-      <Mini label="Data do parto"><Input type="date" value={f.dataParto} onChange={upd("dataParto")} /></Mini>
+      <Mini label="Nome" className="md:col-span-3">
+        <Input value={f.nome} onChange={upd("nome")} />
+      </Mini>
+      <Mini label="CPF">
+        <Input value={f.cpf} onChange={upd("cpf")} />
+      </Mini>
+      <Mini label="Data nascimento">
+        <Input type="date" value={f.dataNascimento} onChange={upd("dataNascimento")} />
+      </Mini>
+      <Mini label="Telefone">
+        <Input value={f.telefone} onChange={upd("telefone")} />
+      </Mini>
+      <Mini label="Endereço" className="md:col-span-2">
+        <Input value={f.endereco} onChange={upd("endereco")} />
+      </Mini>
+      <Mini label="Cartão SUS">
+        <Input value={f.cartaoSus} onChange={upd("cartaoSus")} />
+      </Mini>
+      <Mini label="DUM">
+        <Input type="date" value={f.dum} onChange={upd("dum")} />
+      </Mini>
+      <Mini label="Microárea / ACS">
+        <Input value={f.microarea} onChange={upd("microarea")} />
+      </Mini>
+      <Mini label="1ª consulta">
+        <Input type="date" value={f.primeiraConsulta} onChange={upd("primeiraConsulta")} />
+      </Mini>
+      <Mini label="Data do parto">
+        <Input type="date" value={f.dataParto} onChange={upd("dataParto")} />
+      </Mini>
       <div className="md:col-span-3 flex justify-end gap-2">
-        <Button variant="outline" onClick={onDone}><X className="h-4 w-4 mr-1" />Cancelar</Button>
-        <Button onClick={save}><Save className="h-4 w-4 mr-1" />Salvar</Button>
+        <Button variant="outline" onClick={onDone}>
+          <X className="h-4 w-4 mr-1" />
+          Cancelar
+        </Button>
+        <Button onClick={save}>
+          <Save className="h-4 w-4 mr-1" />
+          Salvar
+        </Button>
       </div>
     </div>
   );
 }
 
-function Mini({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+function Mini({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div className={`space-y-1 ${className ?? ""}`}>
       <Label className="text-xs text-muted-foreground">{label}</Label>
@@ -198,7 +261,9 @@ function IndicatorRow({ def, g }: { def: IndicatorDef; g: Gestante }) {
   return (
     <div className="flex flex-col md:flex-row md:items-center gap-3 border rounded-lg p-3 bg-card">
       <div className="flex items-start gap-3 flex-1 min-w-0">
-        <span className={`shrink-0 w-9 h-9 rounded-md flex items-center justify-center font-semibold ${statusColor(status)}`}>
+        <span
+          className={`shrink-0 w-9 h-9 rounded-md flex items-center justify-center font-semibold ${statusColor(status)}`}
+        >
           {def.key}
         </span>
         <div className="min-w-0">
@@ -206,7 +271,9 @@ function IndicatorRow({ def, g }: { def: IndicatorDef; g: Gestante }) {
           <p className="text-xs text-muted-foreground">{def.label}</p>
           <div className="mt-1 flex flex-wrap gap-2 text-xs">
             <Badge variant="outline">Responsável: {roleLabel[def.owner]}</Badge>
-            <Badge variant="outline" className={statusColor(status)}>{statusLabel(status)}</Badge>
+            <Badge variant="outline" className={statusColor(status)}>
+              {statusLabel(status)}
+            </Badge>
           </div>
         </div>
       </div>
@@ -214,11 +281,17 @@ function IndicatorRow({ def, g }: { def: IndicatorDef; g: Gestante }) {
         {def.type === "boolean" ? (
           <BoolControl value={value as boolean | null} editable={editable} onChange={setVal} />
         ) : (
-          <CountControl value={(value as number) ?? 0} max={def.max ?? 7} editable={editable} onChange={setVal} />
+          <CountControl
+            value={(value as number) ?? 0}
+            max={def.max ?? 7}
+            editable={editable}
+            onChange={setVal}
+          />
         )}
         {!editable && (
           <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground mt-1">
-            <Lock className="h-3 w-3" />Somente leitura
+            <Lock className="h-3 w-3" />
+            Somente leitura
           </div>
         )}
       </div>
@@ -226,10 +299,19 @@ function IndicatorRow({ def, g }: { def: IndicatorDef; g: Gestante }) {
   );
 }
 
-function BoolControl({ value, editable, onChange }: { value: boolean | null; editable: boolean; onChange: (v: boolean | null) => void }) {
+function BoolControl({
+  value,
+  editable,
+  onChange,
+}: {
+  value: boolean | null;
+  editable: boolean;
+  onChange: (v: boolean | null) => void;
+}) {
   const btn = (label: string, v: boolean, active: boolean) => (
     <Button
-      type="button" size="sm"
+      type="button"
+      size="sm"
       variant={active ? "default" : "outline"}
       disabled={!editable}
       onClick={() => onChange(active ? null : v)}
@@ -245,13 +327,24 @@ function BoolControl({ value, editable, onChange }: { value: boolean | null; edi
   );
 }
 
-function CountControl({ value, max, editable, onChange }: { value: number; max: number; editable: boolean; onChange: (v: number) => void }) {
+function CountControl({
+  value,
+  max,
+  editable,
+  onChange,
+}: {
+  value: number;
+  max: number;
+  editable: boolean;
+  onChange: (v: number) => void;
+}) {
   return (
     <div className="flex flex-wrap gap-1 justify-end">
       {Array.from({ length: max + 1 }, (_, i) => i).map((n) => (
         <Button
           key={n}
-          type="button" size="sm"
+          type="button"
+          size="sm"
           variant={value === n ? "default" : "outline"}
           className="w-9 px-0"
           disabled={!editable}
@@ -265,13 +358,26 @@ function CountControl({ value, max, editable, onChange }: { value: number; max: 
 }
 
 function statusLabel(s: string) {
-  return s === "ok" ? "Em dia" : s === "warn" ? "Próximo do vencimento" : s === "late" ? "Vencido" : "Não aplicável";
+  return s === "ok"
+    ? "Em dia"
+    : s === "warn"
+      ? "Próximo do vencimento"
+      : s === "late"
+        ? "Vencido"
+        : "Não aplicável";
 }
 
 const PATIENT_FIELD_LABELS: Record<string, string> = {
-  nome: "Nome", cpf: "CPF", dataNascimento: "Data de nascimento", endereco: "Endereço",
-  telefone: "Telefone", cartaoSus: "Cartão SUS", dum: "DUM", microarea: "Microárea / ACS",
-  primeiraConsulta: "1ª consulta", dataParto: "Data do parto",
+  nome: "Nome",
+  cpf: "CPF",
+  dataNascimento: "Data de nascimento",
+  endereco: "Endereço",
+  telefone: "Telefone",
+  cartaoSus: "Cartão SUS",
+  dum: "DUM",
+  microarea: "Microárea / ACS",
+  primeiraConsulta: "1ª consulta",
+  dataParto: "Data do parto",
 };
 
 function auditFieldLabel(field: string): string {

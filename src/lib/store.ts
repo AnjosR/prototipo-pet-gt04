@@ -1,7 +1,25 @@
 import type { AuditEntry, Gestante, IndicatorKey, Indicators } from "./types";
 import { emptyIndicators } from "./indicators";
+import seedData from "@/data/gestantes.seed.json";
 
 const KEY = "ubs.gestantes.v1";
+
+/** Estrutura de cada gestante fictícia no JSON de seed. As datas são
+ *  armazenadas como deslocamentos em dias a partir de hoje, para que os
+ *  dados de demonstração permaneçam coerentes com a Idade Gestacional. */
+interface SeedGestante {
+  nome: string;
+  cpf: string;
+  dataNascimento: string;
+  endereco: string;
+  telefone: string;
+  cartaoSus: string;
+  dumOffsetDays: number;
+  microarea: string;
+  primeiraConsultaOffsetDays: number;
+  dataPartoOffsetDays: number | null;
+  indicadores: Partial<Indicators>;
+}
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -31,59 +49,24 @@ function seed(): Gestante[] {
     d.setDate(d.getDate() - offsetDays);
     return d.toISOString().slice(0, 10);
   };
-  const list: Gestante[] = [
-    {
-      id: crypto.randomUUID(),
-      nome: "Maria Aparecida Silva",
-      cpf: "123.456.789-00",
-      dataNascimento: "1995-04-12",
-      endereco: "Rua das Flores, 120 — Parnaíba",
-      telefone: "(86) 99999-1111",
-      cartaoSus: "700 1234 5678 9012",
-      dum: mk(70),
-      microarea: "Microárea 03 — ACS Joana",
-      primeiraConsulta: mk(40),
-      dataParto: "",
-      indicadores: { ...emptyIndicators(), A: true, B: 2, C: 2, D: 2, E: 1, G: true },
-      audit: [],
-      createdAt: new Date().toISOString(),
-      createdBy: "seed",
-    },
-    {
-      id: crypto.randomUUID(),
-      nome: "Ana Beatriz Souza",
-      cpf: "987.654.321-00",
-      dataNascimento: "1998-08-30",
-      endereco: "Av. Beira Rio, 45 — Parnaíba",
-      telefone: "(86) 98888-2222",
-      cartaoSus: "700 9999 0000 1111",
-      dum: mk(180),
-      microarea: "Microárea 01 — ACS Carlos",
-      primeiraConsulta: mk(150),
-      dataParto: "",
-      indicadores: { ...emptyIndicators(), A: true, B: 5, C: 5, D: 4, E: 2, F: true, G: true },
-      audit: [],
-      createdAt: new Date().toISOString(),
-      createdBy: "seed",
-    },
-    {
-      id: crypto.randomUUID(),
-      nome: "Juliana Martins Rocha",
-      cpf: "456.789.123-00",
-      dataNascimento: "1992-12-05",
-      endereco: "Rua São João, 88 — Parnaíba",
-      telefone: "(86) 97777-3333",
-      cartaoSus: "700 2222 3333 4444",
-      dum: mk(290),
-      microarea: "Microárea 03 — ACS Joana",
-      primeiraConsulta: mk(260),
-      dataParto: mk(10),
-      indicadores: { ...emptyIndicators(), A: true, B: 7, C: 7, D: 7, E: 3, F: true, G: true, H: true, K: true },
-      audit: [],
-      createdAt: new Date().toISOString(),
-      createdBy: "seed",
-    },
-  ];
+  const nowIso = new Date().toISOString();
+  const list: Gestante[] = (seedData as SeedGestante[]).map((s) => ({
+    id: crypto.randomUUID(),
+    nome: s.nome,
+    cpf: s.cpf,
+    dataNascimento: s.dataNascimento,
+    endereco: s.endereco,
+    telefone: s.telefone,
+    cartaoSus: s.cartaoSus,
+    dum: mk(s.dumOffsetDays),
+    microarea: s.microarea,
+    primeiraConsulta: mk(s.primeiraConsultaOffsetDays),
+    dataParto: s.dataPartoOffsetDays == null ? "" : mk(s.dataPartoOffsetDays),
+    indicadores: { ...emptyIndicators(), ...s.indicadores },
+    audit: [],
+    createdAt: nowIso,
+    createdBy: "seed",
+  }));
   localStorage.setItem(KEY, JSON.stringify(list));
   return list;
 }
