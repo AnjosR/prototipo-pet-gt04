@@ -1,5 +1,6 @@
 import type { AuditEntry, Gestante, IndicatorKey, Indicators } from "./types";
 import { emptyIndicators } from "./indicators";
+import { gerarGestanteIdUnico } from "./gestante-id";
 import seedData from "@/data/gestantes.seed.json";
 
 const KEY = "ubs.gestantes.v1";
@@ -23,8 +24,6 @@ interface SeedGestante {
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
-
-
 
 function read(): Gestante[] {
   if (typeof localStorage === "undefined") return [];
@@ -50,23 +49,28 @@ function seed(): Gestante[] {
     return d.toISOString().slice(0, 10);
   };
   const nowIso = new Date().toISOString();
-  const list: Gestante[] = (seedData as SeedGestante[]).map((s) => ({
-    id: crypto.randomUUID(),
-    nome: s.nome,
-    cpf: s.cpf,
-    dataNascimento: s.dataNascimento,
-    endereco: s.endereco,
-    telefone: s.telefone,
-    cartaoSus: s.cartaoSus,
-    dum: mk(s.dumOffsetDays),
-    microarea: s.microarea,
-    primeiraConsulta: mk(s.primeiraConsultaOffsetDays),
-    dataParto: s.dataPartoOffsetDays == null ? "" : mk(s.dataPartoOffsetDays),
-    indicadores: { ...emptyIndicators(), ...s.indicadores },
-    audit: [],
-    createdAt: nowIso,
-    createdBy: "seed",
-  }));
+  const usados = new Set<string>();
+  const list: Gestante[] = (seedData as SeedGestante[]).map((s) => {
+    const id = gerarGestanteIdUnico(s.nome, s.cpf, usados);
+    usados.add(id);
+    return {
+      id,
+      nome: s.nome,
+      cpf: s.cpf,
+      dataNascimento: s.dataNascimento,
+      endereco: s.endereco,
+      telefone: s.telefone,
+      cartaoSus: s.cartaoSus,
+      dum: mk(s.dumOffsetDays),
+      microarea: s.microarea,
+      primeiraConsulta: mk(s.primeiraConsultaOffsetDays),
+      dataParto: s.dataPartoOffsetDays == null ? "" : mk(s.dataPartoOffsetDays),
+      indicadores: { ...emptyIndicators(), ...s.indicadores },
+      audit: [],
+      createdAt: nowIso,
+      createdBy: "seed",
+    };
+  });
   localStorage.setItem(KEY, JSON.stringify(list));
   return list;
 }
@@ -74,7 +78,9 @@ function seed(): Gestante[] {
 export const store = {
   subscribe(fn: Listener) {
     listeners.add(fn);
-    return () => { listeners.delete(fn); };
+    return () => {
+      listeners.delete(fn);
+    };
   },
 
   list(): Gestante[] {
@@ -84,19 +90,24 @@ export const store = {
     return read().find((g) => g.id === id);
   },
   create(g: Omit<Gestante, "id" | "indicadores" | "audit" | "createdAt">): Gestante {
+    const list = read();
+    const usados = new Set(list.map((x) => x.id));
     const novo: Gestante = {
       ...g,
-      id: crypto.randomUUID(),
+      id: gerarGestanteIdUnico(g.nome, g.cpf, usados),
       indicadores: emptyIndicators(),
       audit: [],
       createdAt: new Date().toISOString(),
     };
-    const list = read();
     list.unshift(novo);
     write(list);
     return novo;
   },
-  updatePatient(id: string, patch: Partial<Gestante>, by: { user: string; role: Gestante["audit"][number]["role"] }) {
+  updatePatient(
+    id: string,
+    patch: Partial<Gestante>,
+    by: { user: string; role: Gestante["audit"][number]["role"] },
+  ) {
     const list = read();
     const idx = list.findIndex((g) => g.id === id);
     if (idx < 0) return;
@@ -108,8 +119,11 @@ export const store = {
       if (key === "audit" || key === "indicadores") return;
       if ((before as any)[key] !== (after as any)[key]) {
         audit.push({
-          user: by.user, role: by.role, field: key,
-          oldValue: (before as any)[key], newValue: (after as any)[key],
+          user: by.user,
+          role: by.role,
+          field: key,
+          oldValue: (before as any)[key],
+          newValue: (after as any)[key],
           at: new Date().toISOString(),
         });
       }
@@ -118,7 +132,12 @@ export const store = {
     list[idx] = after;
     write(list);
   },
-  setIndicator(id: string, key: IndicatorKey, value: Indicators[IndicatorKey], by: { user: string; role: AuditEntry["role"] }) {
+  setIndicator(
+    id: string,
+    key: IndicatorKey,
+    value: Indicators[IndicatorKey],
+    by: { user: string; role: AuditEntry["role"] },
+  ) {
     const list = read();
     const idx = list.findIndex((g) => g.id === id);
     if (idx < 0) return;
@@ -128,7 +147,14 @@ export const store = {
     const indicadores = { ...before.indicadores, [key]: value } as Indicators;
     const audit: AuditEntry[] = [
       ...before.audit,
-      { user: by.user, role: by.role, field: `indicador.${key}`, oldValue: old, newValue: value, at: new Date().toISOString() },
+      {
+        user: by.user,
+        role: by.role,
+        field: `indicador.${key}`,
+        oldValue: old,
+        newValue: value,
+        at: new Date().toISOString(),
+      },
     ];
     list[idx] = { ...before, indicadores, audit };
     write(list);
@@ -142,13 +168,17 @@ export const store = {
 
 import { useEffect, useState } from "react";
 export function useGestantes() {
-  const [list, setList] = useState<Gestante[]>(() => (typeof window === "undefined" ? [] : store.list()));
+  const [list, setList] = useState<Gestante[]>(() =>
+    typeof window === "undefined" ? [] : store.list(),
+  );
   useEffect(() => store.subscribe(() => setList(store.list())), []);
   return list;
 }
 
 export function useGestante(id: string | undefined) {
-  const [g, setG] = useState<Gestante | undefined>(() => (id && typeof window !== "undefined" ? store.get(id) : undefined));
+  const [g, setG] = useState<Gestante | undefined>(() =>
+    id && typeof window !== "undefined" ? store.get(id) : undefined,
+  );
   useEffect(() => {
     if (!id) return;
     setG(store.get(id));
