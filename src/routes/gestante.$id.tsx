@@ -136,19 +136,23 @@ function GestanteDetail() {
 }
 
 function PatientView({ g }: { g: Gestante }) {
-  const rows: [string, string][] = [
-    ["CPF", g.cpf || "—"],
-    ["Data de nascimento", formatDate(g.dataNascimento)],
-    ["Telefone", g.telefone || "—"],
-    ["Cartão SUS", g.cartaoSus || "—"],
-    ["Endereço", g.endereco || "—"],
-    ["Microárea / ACS", g.microarea || "—"],
-    ["DUM", formatDate(g.dum)],
-    ["IG atual", formatIG(g.dum)],
-    ["DPP", formatDate(calcDPP(g.dum) ?? undefined)],
-    ["1ª consulta", formatDate(g.primeiraConsulta)],
-    ["Data do parto", formatDate(g.dataParto)],
-  ];
+  const { user } = useAuth();
+  // Cada perfil enxerga apenas as informações pertinentes ao seu contexto.
+  let rows: [string, string][];
+  if (user?.role === "acs") {
+    // O ACS atua em campo: por privacidade, vê apenas o endereço.
+    rows = [["Endereço", g.endereco || "—"]];
+  } else {
+    // Médico/Enfermeiro e Dentista: resumo clínico
+    // (dados pessoais completos ficam no formulário de edição).
+    rows = [
+      ["Código", g.id],
+      ["DUM", formatDate(g.dum)],
+      ["IG atual", formatIG(g.dum)],
+      ["DPP", formatDate(calcDPP(g.dum) ?? undefined)],
+      ["1ª consulta", formatDate(g.primeiraConsulta)],
+    ];
+  }
   return (
     <dl className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3 text-sm">
       {rows.map(([k, v]) => (
