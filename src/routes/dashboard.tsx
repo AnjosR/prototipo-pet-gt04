@@ -40,8 +40,7 @@ function Dashboard() {
 
   const filtered = useMemo(() => {
     return all.filter((g) => {
-      if (q && !`${g.nome} ${g.cpf} ${g.cartaoSus}`.toLowerCase().includes(q.toLowerCase()))
-        return false;
+      if (q && !`${g.nome} ${g.id}`.toLowerCase().includes(q.toLowerCase())) return false;
       if (micro !== "all" && g.microarea !== micro) return false;
       return true;
     });
@@ -115,7 +114,7 @@ function Dashboard() {
                       >
                         {g.nome}
                       </Link>
-                      <div className="text-xs text-muted-foreground">{g.cpf}</div>
+                      <div className="text-xs text-muted-foreground">{g.id}</div>
                     </td>
                     <td className="py-2 px-2 whitespace-nowrap">
                       <div>{formatIG(g.dum)}</div>
