@@ -1,0 +1,99 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-status-ok: var(--status-ok);
+  --color-status-ok-foreground: var(--status-ok-foreground);
+  --color-status-warn: var(--status-warn);
+  --color-status-warn-foreground: var(--status-warn-foreground);
+  --color-status-late: var(--status-late);
+  --color-status-late-foreground: var(--status-late-foreground);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(0.99 0.005 180);
+  --foreground: oklch(0.20 0.04 220);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20 0.04 220);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.04 220);
+  --primary: oklch(0.55 0.13 200);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0.02 200);
+  --secondary-foreground: oklch(0.25 0.05 220);
+  --muted: oklch(0.96 0.01 220);
+  --muted-foreground: oklch(0.50 0.03 230);
+  --accent: oklch(0.92 0.05 180);
+  --accent-foreground: oklch(0.25 0.05 220);
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.90 0.015 220);
+  --input: oklch(0.92 0.015 220);
+  --ring: oklch(0.55 0.13 200);
+
+  --status-ok: oklch(0.70 0.16 150);
+  --status-ok-foreground: oklch(0.15 0.05 150);
+  --status-warn: oklch(0.85 0.17 90);
+  --status-warn-foreground: oklch(0.25 0.08 80);
+  --status-late: oklch(0.62 0.22 27);
+  --status-late-foreground: oklch(0.99 0 0);
+}
+
+.dark {
+  --background: oklch(0.16 0.02 220);
+  --foreground: oklch(0.97 0.01 200);
+  --card: oklch(0.22 0.03 220);
+  --card-foreground: oklch(0.97 0.01 200);
+  --popover: oklch(0.22 0.03 220);
+  --popover-foreground: oklch(0.97 0.01 200);
+  --primary: oklch(0.70 0.13 200);
+  --primary-foreground: oklch(0.15 0.04 220);
+  --secondary: oklch(0.28 0.03 220);
+  --secondary-foreground: oklch(0.97 0.01 200);
+  --muted: oklch(0.28 0.03 220);
+  --muted-foreground: oklch(0.70 0.02 220);
+  --accent: oklch(0.32 0.05 200);
+  --accent-foreground: oklch(0.97 0.01 200);
+  --destructive: oklch(0.65 0.20 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.70 0.13 200);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  body {
+    background: linear-gradient(180deg, var(--color-background) 0%, color-mix(in oklab, var(--color-primary) 6%, var(--color-background)) 100%);
+    color: var(--color-foreground);
+    min-height: 100vh;
+  }
+}
