@@ -100,37 +100,6 @@ function GestanteDetail() {
           ))}
         </CardContent>
       </Card>
-
-      {g.audit.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Histórico de alterações</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3 max-h-72 overflow-auto pr-1">
-              {[...g.audit].reverse().map((a, i) => (
-                <li key={i} className="flex gap-3 text-sm">
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary/60" />
-                  <div className="min-w-0">
-                    <p className="leading-snug">
-                      <span className="font-medium">{auditFieldLabel(a.field)}</span>
-                      {" → "}
-                      <span className="font-medium">{auditValueLabel(a.newValue)}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {a.user} ·{" "}
-                      {new Date(a.at).toLocaleString("pt-BR", {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      })}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
