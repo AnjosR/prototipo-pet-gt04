@@ -186,6 +186,25 @@ export function statusColor(s: Status) {
   }
 }
 
+export function statusLabel(s: Status, type: IndicatorType = "boolean"): string {
+  if (type === "count") {
+    return s === "ok"
+      ? "Em dia"
+      : s === "warn"
+        ? "Levemente atrasado"
+        : s === "late"
+          ? "Em atraso"
+          : "Não aplicável";
+  }
+  return s === "ok"
+    ? "Em dia"
+    : s === "warn"
+      ? "Próximo do vencimento"
+      : s === "late"
+        ? "Vencido"
+        : "Não aplicável";
+}
+
 export function canEditIndicator(role: Role, key: IndicatorKey): boolean {
   if (role === "medico") return true;
   if (role === "dentista") return key === "K";
