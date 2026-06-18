@@ -132,20 +132,14 @@ export function indicatorStatus(g: Gestante, key: IndicatorKey): Status {
       if (v === true) return "ok";
       if (w < 12) return "warn";
       return "late";
-    case "B": {
-      const n = Number(v) || 0;
-      if (n >= 7) return "ok";
-      const expected = Math.min(7, Math.max(0, Math.floor(w / 5))); // ~1 a cada 5 sem
-      if (n >= expected) return "warn";
-      return "late";
-    }
+    case "B":
     case "C":
     case "D": {
       const n = Number(v) || 0;
-      if (n >= 7) return "ok";
-      const expected = Math.min(7, Math.max(0, Math.floor(w / 5)));
-      if (n >= expected) return "warn";
-      return "late";
+      const expected = expectedPrenatalCount(w, 7);
+      if (n >= expected) return "ok"; // atingiu o esperado p/ a IG → verde
+      if (n >= expected - 1) return "warn"; // 1 abaixo → amarelo
+      return "late"; // 2+ abaixo → vermelho
     }
     case "E": {
       const n = Number(v) || 0;
