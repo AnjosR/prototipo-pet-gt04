@@ -100,6 +100,19 @@ export function emptyIndicators(): Indicators {
   return { A: null, B: 0, C: 0, D: 0, E: 0, F: null, G: null, H: null, I: null, J: null, K: null };
 }
 
+/**
+ * Nº esperado de consultas/registros acumulados até a IG atual, segundo o
+ * cronograma do MS: 1/mês até a 28ª semana; a cada 15 dias entre 28–36s;
+ * semanal a partir da 36ª. Limitado ao teto `max` do indicador.
+ */
+export function expectedPrenatalCount(weeks: number, max = 7): number {
+  if (weeks < 4) return 0;
+  let n = Math.floor(Math.min(weeks, 28) / 4.345); // mensal até 28s
+  if (weeks > 28) n += Math.floor((Math.min(weeks, 36) - 28) / 2); // quinzenal 28–36s
+  if (weeks > 36) n += Math.floor(Math.min(weeks, 42) - 36); // semanal 36s+
+  return Math.min(n, max);
+}
+
 export type Status = "ok" | "warn" | "late" | "na";
 
 /**
