@@ -9,6 +9,7 @@ import {
   canEditIndicator,
   indicatorStatus,
   statusColor,
+  statusLabel,
   type IndicatorDef,
 } from "@/lib/indicators";
 import { calcDPP, formatDate, formatIG } from "@/lib/gestacao";
@@ -245,7 +246,7 @@ function IndicatorRow({ def, g }: { def: IndicatorDef; g: Gestante }) {
           <div className="mt-1 flex flex-wrap gap-2 text-xs">
             <Badge variant="outline">Responsável: {roleLabel[def.owner]}</Badge>
             <Badge variant="outline" className={statusColor(status)}>
-              {statusLabel(status)}
+              {statusLabel(status, def.type)}
             </Badge>
           </div>
         </div>
@@ -328,16 +329,6 @@ function CountControl({
       ))}
     </div>
   );
-}
-
-function statusLabel(s: string) {
-  return s === "ok"
-    ? "Em dia"
-    : s === "warn"
-      ? "Próximo do vencimento"
-      : s === "late"
-        ? "Vencido"
-        : "Não aplicável";
 }
 
 const PATIENT_FIELD_LABELS: Record<string, string> = {
