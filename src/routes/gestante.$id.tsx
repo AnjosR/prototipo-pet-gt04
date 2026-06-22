@@ -70,7 +70,7 @@ function GestanteDetail() {
       <Card>
         <CardHeader className="flex flex-row items-start justify-between pb-3">
           <div>
-            <CardTitle className="text-xl">{g.nome}</CardTitle>
+            <CardTitle className="text-xl">{g.id}</CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
               Cadastrada em {formatDate(g.createdAt.slice(0, 10))}
             </p>
@@ -116,7 +116,6 @@ function PatientView({ g }: { g: Gestante }) {
     // Médico/Enfermeiro e Dentista: resumo clínico
     // (dados pessoais completos ficam no formulário de edição).
     rows = [
-      ["Código", g.id],
       ["DUM", formatDate(g.dum)],
       ["IG atual", formatIG(g.dum)],
       ["DPP", formatDate(calcDPP(g.dum) ?? undefined)],
