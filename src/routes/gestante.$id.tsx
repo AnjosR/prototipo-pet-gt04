@@ -111,7 +111,7 @@ function PatientView({ g }: { g: Gestante }) {
   let rows: [string, string][];
   if (user?.role === "acs") {
     // O ACS atua em campo: por privacidade, vê apenas o endereço.
-    rows = [["Endereço", g.endereco || "—"]];
+    rows = [["DPP", formatDate(calcDPP(g.dum) ?? undefined)]];
   } else {
     // Médico/Enfermeiro e Dentista: resumo clínico
     // (dados pessoais completos ficam no formulário de edição).
