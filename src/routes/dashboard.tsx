@@ -98,7 +98,7 @@ function Dashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 px-2 font-medium">Gestante</th>
+                  <th className="py-2 px-2 font-medium">Código da Gestante</th>
                   <th className="py-2 px-2 font-medium">IG / DPP</th>
                   <th className="py-2 px-2 font-medium">Microárea</th>
                 </tr>
@@ -112,9 +112,8 @@ function Dashboard() {
                         params={{ id: g.id }}
                         className="font-medium text-primary hover:underline"
                       >
-                        {g.nome}
+                        {g.id}
                       </Link>
-                      <div className="text-xs text-muted-foreground">{g.id}</div>
                     </td>
                     <td className="py-2 px-2 whitespace-nowrap">
                       <div>{formatIG(g.dum)}</div>
