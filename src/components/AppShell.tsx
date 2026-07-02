@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useAuth, roleLabel } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Activity, LogOut } from "lucide-react";
@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   if (!user) return <>{children}</>;
@@ -30,9 +31,23 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="ml-auto flex items-center gap-3">
             <div className="text-right hidden sm:block leading-tight">
               <div className="text-sm font-medium">{user.displayName}</div>
-              <div className="text-xs text-muted-foreground">{roleLabel[user.role]} · @{user.username}</div>
+              <div className="text-xs text-muted-foreground">
+                {roleLabel[user.role]} · @{user.username}
+              </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => { logout(); navigate({ to: "/login" }); }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                // Navega primeiro para que o guarda de "alterações não salvas"
+                // possa interceptar (o logout limparia a tela antes do aviso).
+                // Só encerra a sessão se a navegação para /login realmente
+                // ocorreu — não se foi cancelada no diálogo.
+                navigate({ to: "/login" }).then(() => {
+                  if (router.state.location.pathname === "/login") logout();
+                });
+              }}
+            >
               <LogOut className="h-4 w-4" />
               <span className="ml-1 hidden sm:inline">Sair</span>
             </Button>

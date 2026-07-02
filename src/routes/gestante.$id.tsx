@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth, roleLabel } from "@/lib/auth";
@@ -19,8 +19,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ArrowLeft, Lock, Pencil, Save, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/gestante/$id")({
@@ -39,6 +47,43 @@ function GestanteDetail() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [editingPatient, setEditingPatient] = useState(false);
+  // Rascunho dos indicadores: os controles editam apenas este estado local;
+  // nada é gravado no store até o usuário clicar em "Salvar alterações".
+  const [draft, setDraft] = useState<Indicators | null>(null);
+
+  // Ressincroniza o rascunho com o valor salvo. Como os controles só mexem no
+  // rascunho, `indicadores` só muda de referência quando salvamos — então isto
+  // zera o "dirty" após um salvamento, sem descartar edições em andamento.
+  const savedIndicators = g?.indicadores;
+  useEffect(() => {
+    if (savedIndicators) setDraft(savedIndicators);
+  }, [savedIndicators]);
+
+  const dirty =
+    !!g && !!draft && INDICATORS.some((def) => draft[def.key] !== g.indicadores[def.key]);
+
+  // Intercepta TODA navegação para fora da rota enquanto houver alterações não
+  // salvas: botão Voltar, links do cabeçalho, logout e o back/forward do
+  // navegador. `enableBeforeUnload` cobre fechar/recarregar a aba (aviso nativo,
+  // só disparado quando há alterações).
+  const { status, proceed, reset } = useBlocker({
+    shouldBlockFn: () => dirty,
+    enableBeforeUnload: () => dirty,
+    withResolver: true,
+  });
+
+  const saveIndicators = () => {
+    if (!g || !user || !draft) return;
+    INDICATORS.forEach((def) => {
+      if (draft[def.key] !== g.indicadores[def.key] && canEditIndicator(user.role, def.key)) {
+        store.setIndicator(g.id, def.key, draft[def.key], {
+          user: user.username,
+          role: user.role,
+        });
+      }
+    });
+    toast.success("Alterações salvas.");
+  };
 
   if (!g) {
     return (
@@ -52,11 +97,11 @@ function GestanteDetail() {
   }
   if (!user) return null;
 
-  const canEditPatient = user.role === "medico";
-
   // Cada perfil enxerga apenas os indicadores que remetem ao seu contexto:
   // médico vê todos; ACS vê E e J; dentista vê K.
   const visibleIndicators = visibleIndicatorsFor(user.role);
+  const setDraftValue = (key: IndicatorKey) => (v: Indicators[IndicatorKey]) =>
+    setDraft((d) => (d ? { ...d, [key]: v } : d));
 
   return (
     <div className="space-y-5">
@@ -75,12 +120,6 @@ function GestanteDetail() {
               Cadastrada em {formatDate(g.createdAt.slice(0, 10))}
             </p>
           </div>
-          {canEditPatient && !editingPatient && (
-            <Button variant="outline" size="sm" onClick={() => setEditingPatient(true)}>
-              <Pencil className="h-4 w-4 mr-1" />
-              Editar dados
-            </Button>
-          )}
         </CardHeader>
         <CardContent>
           {editingPatient ? (
@@ -97,10 +136,56 @@ function GestanteDetail() {
         </CardHeader>
         <CardContent className="space-y-3">
           {visibleIndicators.map((def) => (
-            <IndicatorRow key={def.key} def={def} g={g} />
+            <IndicatorRow
+              key={def.key}
+              def={def}
+              g={g}
+              value={draft ? draft[def.key] : g.indicadores[def.key]}
+              onChange={setDraftValue(def.key)}
+            />
           ))}
+          <div className="flex justify-end pt-2">
+            <Button
+              onClick={saveIndicators}
+              disabled={!dirty}
+              className="disabled:pointer-events-auto disabled:cursor-not-allowed"
+            >
+              <Save className="h-4 w-4 mr-1" />
+              Salvar alterações
+            </Button>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Confirmação ao tentar sair com alterações pendentes (qualquer rota). */}
+      <AlertDialog
+        open={status === "blocked"}
+        onOpenChange={(open) => {
+          if (!open) reset?.();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterações não salvas</AlertDialogTitle>
+            <AlertDialogDescription>
+              ALTERAÇÕES NÃO FORAM SALVAS, deseja salvar e continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={() => proceed?.()}>
+              Não
+            </Button>
+            <Button
+              onClick={() => {
+                saveIndicators();
+                proceed?.();
+              }}
+            >
+              Sim
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -116,6 +201,9 @@ function PatientView({ g }: { g: Gestante }) {
     // Médico/Enfermeiro e Dentista: resumo clínico
     // (dados pessoais completos ficam no formulário de edição).
     rows = [
+      ["Nome Completo", g.nome],
+      ["Data de Nascimento", formatDate(g.dataNascimento)],
+      ["Endereço", g.endereco],
       ["DUM", formatDate(g.dum)],
       ["IG atual", formatIG(g.dum)],
       ["DPP", formatDate(calcDPP(g.dum) ?? undefined)],
@@ -219,16 +307,28 @@ function Mini({
   );
 }
 
-function IndicatorRow({ def, g }: { def: IndicatorDef; g: Gestante }) {
+function IndicatorRow({
+  def,
+  g,
+  value,
+  onChange,
+}: {
+  def: IndicatorDef;
+  g: Gestante;
+  value: Indicators[IndicatorKey];
+  onChange: (v: Indicators[IndicatorKey]) => void;
+}) {
   const { user } = useAuth();
-  const status = indicatorStatus(g, def.key);
   const editable = !!user && canEditIndicator(user.role, def.key);
-  const value = g.indicadores[def.key];
+  // O status reflete o valor em edição (rascunho), não o salvo.
+  const status = indicatorStatus(
+    { ...g, indicadores: { ...g.indicadores, [def.key]: value } },
+    def.key,
+  );
 
   const setVal = (v: Indicators[IndicatorKey]) => {
-    if (!user || !editable) return;
-    store.setIndicator(g.id, def.key, v, { user: user.username, role: user.role });
-    toast.success(`Indicador ${def.key} atualizado.`);
+    if (!editable) return;
+    onChange(v);
   };
 
   return (

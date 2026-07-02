@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,15 +22,11 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { user, login } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (user) navigate({ to: "/dashboard", replace: true });
-  }, [user, navigate]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +97,7 @@ function LoginPage() {
                   size="sm"
                   onClick={() => quick("medico01", "medico_senha")}
                 >
-                  Médico
+                  Enfermeiro / Médico
                 </Button>
                 <Button
                   type="button"
